@@ -1,8 +1,10 @@
 import type { LayerId } from '@/types'
+import L from 'leaflet'
 import type { TwinModel } from '@/data/metrics'
 import { clamp, damp } from '@/lib/utils'
 import { cubicPoint, TAU, type Vec2 } from '@/lib/geometry'
 import { buildNetwork, type LinkGeo, type NetworkGeometry } from './network'
+import { linkCurve } from '@/lib/geometry'
 import { buildBackdrop, drawBackdrop, type Backdrop } from './layers/backdrop'
 import { drawRoutes } from './layers/routeLayer'
 import { drawGenerations, drawNodes } from './layers/facilityNode'
@@ -91,14 +93,45 @@ export class TwinEngine {
   private resizeObserver?: ResizeObserver
   private motionQuery?: MediaQueryList
 
-  constructor(canvas: HTMLCanvasElement, model: TwinModel, handlers: TwinEngineHandlers) {
+  private lmap: L.Map
+  private tileLight: L.TileLayer
+  private tileDark: L.TileLayer
+
+  constructor(canvas: HTMLCanvasElement, mapDiv: HTMLDivElement, model: TwinModel, handlers: TwinEngineHandlers) {
     this.canvas = canvas
     this.model = model
     this.handlers = handlers
 
-    const ctx = canvas.getContext('2d', { alpha: false })
+    const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) throw new Error('Canvas 2D context unavailable')
     this.ctx = ctx
+
+    this.lmap = L.map(mapDiv, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      // Allow fractional zoom so Leaflet scale exactly matches canvas scale
+      zoomSnap: 0,
+      zoomDelta: 0.1,
+      // Disable all animations so the map doesn't lag behind the canvas
+      fadeAnimation: false,
+      markerZoomAnimation: false,
+      zoomAnimation: false,
+    })
+    
+    this.tileLight = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
+    })
+    this.tileDark = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
+    })
+    this.tileDark.addTo(this.lmap)
 
     this.geo = buildNetwork(model)
     this.backdrop = buildBackdrop(this.geo, model.snapshot.city.world)
@@ -143,6 +176,7 @@ export class TwinEngine {
     this.motionQuery?.removeEventListener('change', this.onMotionPreference)
     this.resizeObserver?.disconnect()
     this.subscribers.clear()
+    this.lmap?.remove()
   }
 
   private onMotionPreference = (e: MediaQueryListEvent) => {
@@ -587,6 +621,8 @@ export class TwinEngine {
       this.clampTarget()
     }
     this.touch()
+    // Let leaflet recalculate its own dimensions after resize
+    this.lmap?.invalidateSize()
   }
 
   private frame = (now: number) => {
@@ -636,11 +672,78 @@ export class TwinEngine {
       this.camera = { ...this.target }
     }
     if (changed) this.touch()
+    this.syncMap()
+  }
+
+  private syncMap() {
+    if (!this.lmap) return
+    const min_lon = 72.7763
+    const max_lon = 72.9797
+    const min_lat = 18.8940
+    const max_lat = 19.2702
+
+    const lon = min_lon + ((this.camera.x - 200) / 1250) * (max_lon - min_lon)
+    const lat = max_lat - ((this.camera.y - 100) / 850) * (max_lat - min_lat)
+    const zoom = Math.log2(this.camera.scale) + 13.07717
+
+    this.lmap.setView([lat, lon], zoom, { animate: false })
+
+    const isLight = document.documentElement.classList.contains('light-mode')
+    if (isLight && !this.lmap.hasLayer(this.tileLight)) {
+      this.lmap.removeLayer(this.tileDark)
+      this.lmap.addLayer(this.tileLight)
+    } else if (!isLight && !this.lmap.hasLayer(this.tileDark)) {
+      this.lmap.removeLayer(this.tileLight)
+      this.lmap.addLayer(this.tileDark)
+    }
+  }
+
+  /** Reproject every node from its real lat/lon through Leaflet each frame
+   *  so nodes are pixel-perfectly stuck to their real-world map positions. */
+  private updateNodePositionsFromLeaflet() {
+    if (!this.lmap || !this.view.w) return
+    const { scale, x: cx, y: cy } = this.camera
+    const hw = this.view.w / 2
+    const hh = this.view.h / 2
+
+    let anyChanged = false
+    for (const node of this.geo.nodes) {
+      if (!node.latLon) continue
+      const pt = this.lmap.latLngToContainerPoint([node.latLon.lat, node.latLon.lon])
+      // Convert Leaflet screen point to canvas world position
+      const wx = (pt.x - hw) / scale + cx
+      const wy = (pt.y - hh) / scale + cy
+      node.x = wx
+      node.y = wy
+      anyChanged = true
+    }
+
+    if (!anyChanged) return
+
+    // Recompute route curves so they connect updated node positions
+    for (const link of this.geo.links) {
+      const from = link.from
+      const to = link.to
+      const dx = to.x - from.x
+      const dy = to.y - from.y
+      const dist = Math.hypot(dx, dy) || 1
+      const ux = dx / dist
+      const uy = dy / dist
+      const start = { x: from.x + ux * (from.r * 0.86), y: from.y + uy * (from.r * 0.9) }
+      const end = { x: to.x - ux * (to.r * 0.9), y: to.y - uy * (to.r * 0.94) }
+      const bow = link.curve ? (link as { _bow?: number })._bow ?? 0.12 : 0.12
+      link.curve = linkCurve(start, end, bow)
+      link.mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
+    }
   }
 
   private render(dt: number) {
     const { ctx } = this
     const s = this.dpr
+    // Reproject all nodes to pixel-perfect Leaflet positions before rendering
+    this.updateNodePositionsFromLeaflet()
+    // Clear the canvas so transparent areas show the Leaflet map beneath
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     ctx.setTransform(s, 0, 0, s, 0, 0)
     ctx.save()
     ctx.translate(this.view.w / 2, this.view.h / 2)

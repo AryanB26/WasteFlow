@@ -21,6 +21,8 @@ export interface NodeGeo {
   derived: FacilityDerived
   x: number
   y: number
+  /** Real-world coordinates for Leaflet-based pixel-perfect projection. */
+  latLon: { lat: number; lon: number } | null
   /** Base glyph radius in world units, scaled by throughput share. */
   r: number
   /** Utilisation colour: normal / warning / critical. */
@@ -103,6 +105,7 @@ export function buildNetwork(model: TwinModel): NetworkGeometry {
       derived,
       x: facility.position.x,
       y: facility.position.y,
+      latLon: facility.latLon ?? null,
       r: KIND_RADIUS[facility.kind] * elevScale * (0.9 + throughputWeight * 0.3),
       stateColor: NODE_STATE_COLOR[derived.state],
       elevScale,

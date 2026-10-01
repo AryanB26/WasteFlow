@@ -18,6 +18,8 @@ import type {
   SavedOptimizationScenario,
 } from '@/engine/optimizationTypes'
 import { createSavedOptimizationScenario } from '@/engine/optimizationEngine'
+import type { RerouteState } from '@/engine/rerouteEngine'
+import { buildReroutePlan, recalculatePlan } from '@/engine/rerouteEngine'
 
 export type ViewId =
   | 'twin'
@@ -187,6 +189,15 @@ interface TwinStore {
   savedOptimizationScenarios: SavedOptimizationScenario[]
   saveOptimizationScenario: (rec: OptimizationRecommendation, strategy: OptimizationStrategyId, customName?: string) => void
   deleteOptimizationScenario: (scenarioId: string) => void
+
+  /* ── Reroute Engine State ─────────────────────────────────── */
+  rerouteState: RerouteState
+  openReroute: (routeId: string, model: import('@/data/metrics').TwinModel) => void
+  closeReroute: () => void
+  selectRerouteAlternatives: (ids: string[], model: import('@/data/metrics').TwinModel) => void
+  simulateReroute: () => void
+  applyReroute: () => void
+  restoreOriginalRoute: () => void
 }
 
 /**
@@ -444,5 +455,42 @@ export const useTwinStore = create<TwinStore>((set, get) => ({
     const nextList = savedOptimizationScenarios.filter((s) => s.scenarioId !== scenarioId)
     persistSavedOptimizationScenarios(nextList)
     set({ savedOptimizationScenarios: nextList })
+  },
+
+  /* ── Reroute Engine ──────────────────────────────────────── */
+  rerouteState: { status: 'idle', activeRouteId: null, plan: null },
+
+  openReroute: (routeId, model) => {
+    try {
+      const plan = buildReroutePlan(routeId, model)
+      set({ rerouteState: { status: 'analyzing', activeRouteId: routeId, plan } })
+    } catch {
+      set({ rerouteState: { status: 'analyzing', activeRouteId: routeId, plan: null } })
+    }
+  },
+
+  closeReroute: () => set({ rerouteState: { status: 'idle', activeRouteId: null, plan: null } }),
+
+  selectRerouteAlternatives: (ids, model) => {
+    const { rerouteState } = get()
+    if (!rerouteState.plan) return
+    const plan = recalculatePlan(rerouteState.plan, ids, model)
+    set({ rerouteState: { ...rerouteState, plan } })
+  },
+
+  simulateReroute: () => {
+    const { rerouteState } = get()
+    if (!rerouteState.plan) return
+    set({ rerouteState: { ...rerouteState, status: 'simulated' } })
+  },
+
+  applyReroute: () => {
+    const { rerouteState } = get()
+    if (!rerouteState.plan) return
+    set({ rerouteState: { ...rerouteState, status: 'applied' } })
+  },
+
+  restoreOriginalRoute: () => {
+    set({ rerouteState: { status: 'idle', activeRouteId: null, plan: null } })
   },
 }))

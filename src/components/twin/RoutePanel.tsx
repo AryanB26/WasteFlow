@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Crosshair, Lock, Route as RouteIcon, X } from 'lucide-react'
+import { ArrowRight, Crosshair, Route as RouteIcon, X } from 'lucide-react'
 import { useTwinStore } from '@/state/twinStore'
 import { useTwinModel } from '@/hooks/useTwinModel'
 import { useMediaQuery } from '@/hooks'
@@ -31,6 +31,7 @@ const TIER_LABEL = { low: 'LOW FLOW', medium: 'MEDIUM FLOW', high: 'HIGH FLOW' }
 export function RoutePanel() {
   const selectedRouteId = useTwinStore((s) => s.selectedRouteId)
   const selectRoute = useTwinStore((s) => s.selectRoute)
+  const openReroute = useTwinStore((s) => s.openReroute)
   const model = useTwinModel()
   const transport = selectedRouteId ? model.engine.transport[selectedRouteId] : undefined
   const engine = useTwinEngine()
@@ -90,6 +91,7 @@ export function RoutePanel() {
       transport={transport!}
       onClose={() => selectRoute(null)}
       onFocus={() => engine?.focusRoute(route.id)}
+      onReroute={() => openReroute(route.id, model)}
     />
   )
 
@@ -160,10 +162,11 @@ interface RouteBodyProps {
   transport: TransportResult
   onClose: () => void
   onFocus: () => void
+  onReroute: () => void
 }
 
 const RouteBody = forwardRef<HTMLDivElement, RouteBodyProps>(function RouteBody(
-  { route, flow, fromName, toName, fleetLabel, transport, onClose, onFocus },
+  { route, flow, fromName, toName, fleetLabel, transport, onClose, onFocus, onReroute },
   ref,
 ) {
   const statusColor = ROUTE_STATUS_COLOR_HEX[flow.status]
@@ -351,10 +354,18 @@ const RouteBody = forwardRef<HTMLDivElement, RouteBodyProps>(function RouteBody(
         <Button size="sm" variant="primary" icon={<Crosshair size={11} strokeWidth={1.75} />} onClick={onFocus}>
           Focus corridor
         </Button>
-        <span className="flex items-center gap-1.5 border border-hair px-2 py-[5px] font-mono text-[9px] tracking-[0.12em] text-ink-ghost">
-          <Lock size={9.5} strokeWidth={1.75} />
-          REROUTE · PHASE 6
-        </span>
+        <button
+          onClick={onReroute}
+          className={cn(
+            'flex items-center gap-1.5 border px-2 py-[5px] font-mono text-[9px] tracking-[0.12em] transition-colors duration-150',
+            blocked
+              ? 'border-signal/50 bg-signal/10 text-signal hover:bg-signal/18 hover:border-signal/70 cursor-pointer'
+              : 'border-hair text-ink-ghost cursor-pointer hover:border-white/25 hover:text-ink-dim',
+          )}
+        >
+          <RouteIcon size={9.5} strokeWidth={1.75} />
+          REROUTE
+        </button>
       </footer>
     </div>
   )

@@ -12,6 +12,7 @@ import { SimulationPlaceholder } from './SimulationPlaceholder'
 import { FacilityPanel } from './FacilityPanel'
 import { RoutePanel } from './RoutePanel'
 import { NodeTooltip } from './NodeTooltip'
+import { ReroutePlanner } from './ReroutePlanner'
 
 /**
  * DIGITAL TWIN — the primary screen.
@@ -71,6 +72,8 @@ export function DigitalTwin() {
             <NodeTooltip />
             <FacilityPanel />
             <RoutePanel />
+            {/* reroute planner — overlays the full viewport */}
+            <ReroutePlanner />
           </motion.div>
         )}
       </AnimatePresence>

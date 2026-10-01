@@ -2,12 +2,13 @@ import type { NetworkGeometry } from '../network'
 import type { RenderContext } from '../renderContext'
 import { C, rgbaStr, type RGB } from '../palette'
 import { hashString, seeded } from '@/lib/utils'
-import { label } from '../text'
+import { mumbaiLandPath } from '@/data/mumbaiPath'
 
 export interface Backdrop {
   streets: Path2D
   buildings: Path2D
   water: Path2D
+  land: Path2D
   districts: { x: number; y: number; text: string; color: RGB }[]
   halos: { x: number; y: number; r: number; color: RGB }[]
   bounds: { width: number; height: number }
@@ -93,50 +94,19 @@ export function buildBackdrop(geo: NetworkGeometry, world: { width: number; heig
     }
   }
 
-  // Harbour: the coastal city the network serves. Kept in the extreme corners
-  // so no piece of the network is ever plotted over water.
+  // Base water covers the whole canvas, Mumbai landmass is rendered on top
   const water = new Path2D()
-  water.moveTo(-40, -40) // north quay inlet
-  water.lineTo(430, -40)
-  water.bezierCurveTo(300, 60, 150, 132, -40, 168)
-  water.closePath()
-  water.moveTo(-40, world.height + 40) // south dock
-  water.lineTo(300, world.height + 40)
-  water.bezierCurveTo(215, world.height - 34, 96, world.height - 78, -40, world.height - 96)
-  water.closePath()
+  water.rect(0, 0, world.width, world.height)
+  const land = new Path2D(mumbaiLandPath)
 
-  return { streets, buildings, water, districts, halos, bounds: world }
+  return { streets, buildings, water, land, districts, halos, bounds: world }
 }
 
 /** Draws the backdrop: base wash, grid, plan, water, halos. */
 export function drawBackdrop(rc: RenderContext, backdrop: Backdrop) {
   const { ctx, camera, width, height } = rc
-  const world = backdrop.bounds
 
-  // Base wash — deepest void at the edges, a hint of light over the network.
-  ctx.fillStyle = rgbaStr(C.void, 1)
-  ctx.fillRect(0, 0, width, height)
-
-  const g = ctx.createRadialGradient(
-    width * 0.46,
-    height * 0.44,
-    0,
-    width * 0.46,
-    height * 0.44,
-    Math.max(width, height) * 0.78,
-  )
-  const isLight = document.documentElement.classList.contains('light-mode')
-  if (isLight) {
-    g.addColorStop(0, rgbaStr(C.base, 0.55))
-    g.addColorStop(0.45, rgbaStr(C.base, 0.35))
-    g.addColorStop(1, rgbaStr(C.void, 0))
-  } else {
-    g.addColorStop(0, 'rgba(18,26,30,0.55)')
-    g.addColorStop(0.45, 'rgba(10,13,16,0.35)')
-    g.addColorStop(1, 'rgba(4,5,6,0)')
-  }
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, width, height)
+  // Base wash is now handled by Leaflet, leaving canvas transparent
 
   // World grid — the instrument's millimetre paper.
   const gridStep = 48
@@ -147,6 +117,11 @@ export function drawBackdrop(rc: RenderContext, backdrop: Backdrop) {
   const worldBottom = camera.y + (height * 0.5) * invScale
 
   ctx.save()
+  // Apply the camera transform so the map and grid sync perfectly with the nodes
+  ctx.translate(width / 2, height / 2)
+  ctx.scale(camera.scale, camera.scale)
+  ctx.translate(-camera.x, -camera.y)
+
   ctx.lineWidth = 1 * invScale
   ctx.strokeStyle = rgbaStr(C.ink, 0.028)
   ctx.beginPath()
@@ -183,24 +158,7 @@ export function drawBackdrop(rc: RenderContext, backdrop: Backdrop) {
   // ctx.fillStyle = rgbaStr(C.ink, 0.022)
   // ctx.fill(backdrop.buildings)
 
-  // Harbour.
-  ctx.fillStyle = rgbaStr(C.base, 0.72)
-  ctx.fill(backdrop.water)
-  ctx.lineWidth = 1.1 * invScale
-  ctx.strokeStyle = rgbaStr(C.glass, 0.22)
-  ctx.stroke(backdrop.water)
-  // Second shoreline contour, drawn slightly inside the coast for depth.
-  ctx.save()
-  ctx.clip(backdrop.water)
-  ctx.strokeStyle = rgbaStr(C.glass, 0.09)
-  ctx.lineWidth = 1 * invScale
-  ctx.beginPath()
-  ctx.moveTo(430, -40)
-  ctx.bezierCurveTo(300, 60, 150, 132, -40, 168)
-  ctx.moveTo(300, world.height + 40)
-  ctx.bezierCurveTo(215, world.height - 34, 96, world.height - 78, -40, world.height - 96)
-  ctx.stroke()
-  ctx.restore()
+  // Map basemap is now handled by Leaflet.
 
   // District halos — a low glow anchoring each collection zone to the map.
   for (const halo of backdrop.halos) {

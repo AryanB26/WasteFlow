@@ -15,7 +15,8 @@ import { hashString, seeded } from '@/lib/utils'
 export const zones: Facility[] = [
   {
     id: 'Z-AN', code: 'CZ-AN', name: 'Andheri Collection Zone', shortName: 'ANDHERI',
-    kind: 'zone', position: { x: 300, y: 340 }, input: 936, output: 936, capacity: 980,
+    latLon: { lat: 19.1136, lon: 72.8697 },
+    kind: 'zone', position: { x: 773, y: 453 }, input: 936, output: 936, capacity: 980,
     waiting: 0, processingTimeMin: 0, elevation: 14,
     mix: { organic: 52, residual: 26, recyclable: 14, commercial: 8 },
     crew: 58, uptimePct: 97.8, commissioned: '2016-04',
@@ -29,7 +30,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-BA', code: 'CZ-BA', name: 'Bandra Collection Zone', shortName: 'BANDRA',
-    kind: 'zone', position: { x: 330, y: 540 }, input: 798, output: 798, capacity: 860,
+    latLon: { lat: 19.0596, lon: 72.8295 },
+    kind: 'zone', position: { x: 526, y: 575 }, input: 798, output: 798, capacity: 860,
     waiting: 0, processingTimeMin: 0, elevation: 12,
     mix: { organic: 48, residual: 28, recyclable: 17, commercial: 7 },
     crew: 46, uptimePct: 96.4, commissioned: '2015-09',
@@ -43,7 +45,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-KU', code: 'CZ-KU', name: 'Kurla Collection Zone', shortName: 'KURLA',
-    kind: 'zone', position: { x: 820, y: 500 }, input: 838, output: 838, capacity: 890,
+    latLon: { lat: 19.0728, lon: 72.8797 },
+    kind: 'zone', position: { x: 835, y: 546 }, input: 838, output: 838, capacity: 890,
     waiting: 0, processingTimeMin: 0, elevation: 11,
     mix: { organic: 46, residual: 31, recyclable: 15, commercial: 8 },
     crew: 44, uptimePct: 95.1, commissioned: '2017-02',
@@ -57,7 +60,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-PO', code: 'CZ-PO', name: 'Powai Collection Zone', shortName: 'POWAI',
-    kind: 'zone', position: { x: 1010, y: 300 }, input: 619, output: 619, capacity: 640,
+    latLon: { lat: 19.1176, lon: 72.9060 },
+    kind: 'zone', position: { x: 997, y: 444 }, input: 619, output: 619, capacity: 640,
     waiting: 0, processingTimeMin: 0, elevation: 26,
     mix: { organic: 44, residual: 24, recyclable: 26, commercial: 6 },
     crew: 34, uptimePct: 98.6, commissioned: '2019-07',
@@ -71,7 +75,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-DA', code: 'CZ-DA', name: 'Dadar Collection Zone', shortName: 'DADAR',
-    kind: 'zone', position: { x: 420, y: 720 }, input: 887, output: 887, capacity: 940,
+    latLon: { lat: 19.0178, lon: 72.8473 },
+    kind: 'zone', position: { x: 636, y: 670 }, input: 887, output: 887, capacity: 940,
     waiting: 0, processingTimeMin: 0, elevation: 9,
     mix: { organic: 50, residual: 29, recyclable: 14, commercial: 7 },
     crew: 49, uptimePct: 96.9, commissioned: '2014-11',
@@ -85,7 +90,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-BO', code: 'CZ-BO', name: 'Borivali Collection Zone', shortName: 'BORIVALI',
-    kind: 'zone', position: { x: 260, y: 130 }, input: 865, output: 865, capacity: 900,
+    latLon: { lat: 19.2290, lon: 72.8573 },
+    kind: 'zone', position: { x: 697, y: 193 }, input: 865, output: 865, capacity: 900,
     waiting: 0, processingTimeMin: 0, elevation: 19,
     mix: { organic: 47, residual: 30, recyclable: 16, commercial: 7 },
     crew: 47, uptimePct: 97.2, commissioned: '2016-08',
@@ -99,7 +105,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-CH', code: 'CZ-CH', name: 'Chembur Collection Zone', shortName: 'CHEMBUR',
-    kind: 'zone', position: { x: 950, y: 780 }, input: 722, output: 722, capacity: 810,
+    latLon: { lat: 19.0522, lon: 72.8996 },
+    kind: 'zone', position: { x: 957, y: 592 }, input: 722, output: 722, capacity: 810,
     waiting: 0, processingTimeMin: 0, elevation: 13,
     mix: { organic: 43, residual: 34, recyclable: 15, commercial: 8 },
     crew: 40, uptimePct: 95.6, commissioned: '2015-03',
@@ -113,7 +120,8 @@ export const zones: Facility[] = [
   },
   {
     id: 'Z-MU', code: 'CZ-MU', name: 'Mulund Collection Zone', shortName: 'MULUND',
-    kind: 'zone', position: { x: 1300, y: 170 }, input: 769, output: 769, capacity: 810,
+    latLon: { lat: 19.1725, lon: 72.9425 },
+    kind: 'zone', position: { x: 1221, y: 320 }, input: 769, output: 769, capacity: 810,
     waiting: 0, processingTimeMin: 0, elevation: 17,
     mix: { organic: 45, residual: 29, recyclable: 18, commercial: 8 },
     crew: 41, uptimePct: 98.1, commissioned: '2018-05',

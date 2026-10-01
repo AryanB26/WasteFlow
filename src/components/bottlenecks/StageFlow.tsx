@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { C, IS_LIGHT_MODE, NODE_STATE_COLOR_HEX, rgbaStr } from '@/twin/palette'
+import { C, NODE_STATE_COLOR_HEX, rgbaStr } from '@/twin/palette'
 import type { NodeState } from '@/types'
 import { cn } from '@/lib/utils'
 

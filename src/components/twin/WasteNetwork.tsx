@@ -5,6 +5,7 @@ import { useTwinModel } from '@/hooks/useTwinModel'
 import { useTwinStore } from '@/state/twinStore'
 import { validateEngines } from '@/engine/validation'
 import { TwinEngineProvider } from './TwinContext'
+import 'leaflet/dist/leaflet.css'
 
 /**
  * WASTE NETWORK — the digital twin surface.
@@ -16,6 +17,7 @@ import { TwinEngineProvider } from './TwinContext'
 export function WasteNetwork({ children }: { children?: ReactNode }) {
   const model = useTwinModel()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
   const [engine, setEngine] = useState<TwinEngine | null>(null)
 
   const view = useTwinStore((s) => s.view)
@@ -31,8 +33,9 @@ export function WasteNetwork({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
-    const instance = new TwinEngine(canvas, model, {
+    const mapDiv = mapRef.current
+    if (!canvas || !mapDiv) return
+    const instance = new TwinEngine(canvas, mapDiv, model, {
       onSelect: select,
       onSelectRoute: selectRoute,
       onHover: hover,
@@ -72,9 +75,18 @@ export function WasteNetwork({ children }: { children?: ReactNode }) {
 
   return (
     <div className="absolute inset-0 select-none">
+      <div
+        ref={mapRef}
+        className="absolute inset-0"
+        style={{
+          zIndex: 0,
+          opacity: 0.35,
+        }}
+      />
       <canvas
         ref={canvasRef}
-        className="h-full w-full cursor-grab-twin touch-none"
+        className="absolute inset-0 h-full w-full cursor-grab-twin touch-none"
+        style={{ zIndex: 1 }}
         aria-label="Mumbai waste network digital twin"
       />
       {!engine && (

@@ -85,6 +85,8 @@ export interface Facility {
   tags: string[]
   /** Collection-zone payload. Present only when `kind === 'zone'`. */
   collection?: CollectionProfile
+  /** Real-world geographic coordinates for Leaflet-driven pixel-perfect alignment. */
+  latLon?: { lat: number; lon: number }
 }
 
 /** Collection-zone specific figures (spec §4). */

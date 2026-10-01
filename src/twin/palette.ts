@@ -64,7 +64,7 @@ export const LIGHT_C = {
 }
 
 export const C = new Proxy(DARK_C, {
-  get: (target, prop: keyof typeof DARK_C) => {
+  get: (_target, prop: keyof typeof DARK_C) => {
     return (IS_LIGHT_MODE ? LIGHT_C : DARK_C)[prop] || DARK_C[prop]
   }
 })

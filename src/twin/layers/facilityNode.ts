@@ -205,7 +205,7 @@ function drawNodeLabel(
 
   const baseY = node.y + r + 7 * inv
   const nameSize = 9.5 * inv
-  const name = node.facility.code
+  const name = node.facility.shortName
   const w = measure(ctx, name, nameSize, { family: 'mono', weight: 600, tracking: 0.8 })
   const chip = `${Math.round(node.derived.inflow).toLocaleString('en-US')} T/D`
 
